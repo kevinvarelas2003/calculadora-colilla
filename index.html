@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Colilla — Vigilante</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --surface2: #181c23;
+    --border: #1e2330;
+    --border2: #252b3a;
+    --accent: #00d4aa;
+    --accent2: #0099cc;
+    --warn: #f5a623;
+    --danger: #e8445a;
+    --festivo: #a855f7;
+    --dominical: #3b82f6;
+    --nocturno: #1e3a5f;
+    --text: #e8ecf4;
+    --text2: #8892a4;
+    --text3: #4a5568;
+    --green: #10b981;
+    --red: #ef4444;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* GRID BACKGROUND */
+  body::before {
+    content:'';
+    position:fixed; inset:0;
+    background-image: 
+      linear-gradient(rgba(0,212,170,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,170,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events:none; z-index:0;
+  }
+
+  .app { position:relative; z-index:1; max-width:900px; margin:0 auto; padding:24px 16px 60px; }
+
+  /* HEADER */
+  .header {
+    display:flex; align-items:center; gap:16px;
+    padding: 24px 0 28px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 28px;
+  }
+  .header-icon {
+    width:48px; height:48px;
+    background: linear-gradient(135deg, #00d4aa22, #0099cc22);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px;
+  }
+  .header-title { font-family:'Rajdhani', sans-serif; font-size:26px; font-weight:700; letter-spacing:1px; }
+  .header-sub { font-size:12px; color:var(--text2); font-family:'IBM Plex Mono', monospace; margin-top:2px; }
+  .header-badge {
+    margin-left:auto;
+    background: linear-gradient(135deg, #00d4aa15, #0099cc15);
+    border:1px solid var(--accent);
+    padding:6px 14px; border-radius:20px;
+    font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--accent);
+  }
+
+  /* SECTION */
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .section-header {
+    display:flex; align-items:center; gap:10px;
+    padding: 14px 18px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .section-header:hover { background: #1e2330; }
+  .section-num {
+    width:24px; height:24px; border-radius:50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:600; color:#000;
+    flex-shrink:0;
+  }
+  .section-title { font-family:'Rajdhani', sans-serif; font-size:16px; font-weight:600; letter-spacing:0.5px; flex:1; }
+  .section-arrow { color:var(--text2); font-size:12px; transition:transform 0.2s; }
+  .section-arrow.open { transform: rotate(90deg); }
+  .section-body { padding: 18px; display:none; }
+  .section-body.open { display:block; }
+
+  /* PERIOD ROW */
+  .period-row { display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; }
+  .field-group { display:flex; flex-direction:column; gap:6px; flex:1; min-width:160px; }
+  .field-label { font-size:11px; color:var(--text2); font-family:'IBM Plex Mono', monospace; text-transform:uppercase; letter-spacing:0.5px; }
+  input[type=date], input[type=number], select {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.15s;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+  input[type=number] { -moz-appearance: textfield; }
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; }
+
+  .btn {
+    padding: 9px 18px; border-radius: 8px; border: none;
+    font-family: 'Rajdhani', sans-serif; font-size:14px; font-weight:600; letter-spacing:0.5px;
+    cursor: pointer; transition: all 0.15s; white-space:nowrap;
+  }
+  .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color:#000; }
+  .btn-primary:hover { opacity:0.85; transform:translateY(-1px); }
+  .btn-secondary { background: var(--surface2); border:1px solid var(--border2); color:var(--text2); }
+  .btn-secondary:hover { border-color: var(--accent); color:var(--text); }
+  .btn-sm { padding:5px 12px; font-size:12px; }
+  .btn-danger { background:#e8445a22; border:1px solid var(--danger); color:var(--danger); }
+  .btn-danger:hover { background: var(--danger); color:#fff; }
+
+  /* CALENDAR */
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-top: 4px;
+  }
+  .cal-dow {
+    text-align:center; font-family:'IBM Plex Mono', monospace;
+    font-size:10px; color:var(--text3); padding:4px 0 6px;
+    text-transform:uppercase; letter-spacing:0.5px;
+  }
+  .cal-dow.sunday { color: var(--dominical); }
+  .cal-empty { background:transparent; }
+  .cal-day {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 4px;
+    text-align:center;
+    cursor: pointer;
+    transition: all 0.12s;
+    position:relative;
+    min-height: 72px;
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+  }
+  .cal-day:hover { border-color: var(--accent2); }
+  .cal-day.sunday { border-color: #1e3a6e; }
+  .cal-day.festivo { background: #2d1b4e; border-color: var(--festivo); }
+  .cal-day.has-turno { border-color: var(--accent); }
+  .cal-day-num {
+    font-family:'IBM Plex Mono', monospace; font-size:13px; font-weight:600;
+    color: var(--text2);
+  }
+  .cal-day.sunday .cal-day-num { color: var(--dominical); }
+  .cal-day.festivo .cal-day-num { color: var(--festivo); }
+
+  .day-badge {
+    font-size:9px; padding:1px 5px; border-radius:10px;
+    font-family:'IBM Plex Mono', monospace; font-weight:600;
+    text-transform:uppercase; letter-spacing:0.3px;
+  }
+  .badge-dom { background:#1e3a6e; color:var(--dominical); }
+  .badge-fest { background:#2d1b4e; color:var(--festivo); }
+  .badge-d { background:#003d2e; color:var(--accent); }
+  .badge-n { background:#0a1a2e; color:#60a5fa; }
+
+  .cal-actions {
+    display:flex; gap:3px; margin-top:2px; flex-wrap:wrap; justify-content:center;
+  }
+  .cal-btn {
+    font-size:9px; padding:2px 5px; border-radius:4px; border:none; cursor:pointer;
+    font-family:'IBM Plex Mono', monospace; font-weight:600;
+    transition: all 0.1s; line-height:1.4;
+  }
+  .cal-btn-d { background:#003d2e; color:var(--accent); }
+  .cal-btn-d:hover, .cal-btn-d.active { background:var(--accent); color:#000; }
+  .cal-btn-n { background:#0a1a2e; color:#60a5fa; }
+  .cal-btn-n:hover, .cal-btn-n.active { background:#3b82f6; color:#fff; }
+  .cal-btn-f { background:#2d1b4e; color:var(--festivo); }
+  .cal-btn-f:hover, .cal-btn-f.active { background:var(--festivo); color:#fff; }
+  .cal-btn-x { background:#2a0a10; color:var(--danger); }
+  .cal-btn-x:hover { background:var(--danger); color:#fff; }
+
+  /* LEYENDA */
+  .legend { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+  .legend-item { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text2); }
+  .legend-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
+  /* RESUMEN TURNOS */
+  .turnos-summary {
+    display:grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap:8px; margin-top:12px;
+  }
+  .turno-card {
+    background: var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 12px;
+  }
+  .turno-card-label { font-size:10px; color:var(--text2); font-family:'IBM Plex Mono', monospace; text-transform:uppercase; }
+  .turno-card-val { font-family:'Rajdhani', sans-serif; font-size:22px; font-weight:700; color:var(--accent); margin-top:2px; }
+  .turno-card-unit { font-size:10px; color:var(--text3); }
+
+  /* DEDUCCIONES */
+  .deductions-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .deduction-row { display:flex; align-items:center; gap:8px; }
+  .deduction-label { font-size:12px; color:var(--text2); flex:1; }
+  .deduction-val { font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--text); width:120px; }
+
+  /* RESULTADO */
+  .result-card {
+    background: linear-gradient(135deg, #00150f, #001a22);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 24px;
+    position:relative; overflow:hidden;
+  }
+  .result-card::before {
+    content:'';
+    position:absolute; top:-40px; right:-40px;
+    width:160px; height:160px;
+    background: radial-gradient(circle, #00d4aa15, transparent 70%);
+    pointer-events:none;
+  }
+  .result-title { font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--accent); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+  .result-neto { font-family:'Rajdhani', sans-serif; font-size:48px; font-weight:700; color:var(--accent); line-height:1; }
+  .result-neto span { font-size:24px; }
+
+  .result-breakdown {
+    margin-top:20px; display:grid; grid-template-columns:1fr 1fr; gap:0;
+    border: 1px solid var(--border); border-radius:8px; overflow:hidden;
+  }
+  .rb-row {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:8px 14px; border-bottom:1px solid var(--border);
+    font-size:12px;
+  }
+  .rb-row:last-child { border-bottom:none; }
+  .rb-row.total-dev { background:#001a10; }
+  .rb-row.total-ded { background:#1a000a; }
+  .rb-label { color:var(--text2); }
+  .rb-val { font-family:'IBM Plex Mono', monospace; color:var(--text); }
+  .rb-val.green { color:var(--green); }
+  .rb-val.red { color:var(--red); }
+
+  .concepts-table {
+    width:100%; border-collapse:collapse; margin-top:12px; font-size:12px;
+  }
+  .concepts-table th {
+    text-align:left; padding:6px 10px;
+    font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--text3);
+    text-transform:uppercase; letter-spacing:0.5px;
+    border-bottom:1px solid var(--border);
+  }
+  .concepts-table td {
+    padding:7px 10px; border-bottom:1px solid var(--border);
+    font-family:'IBM Plex Mono', monospace;
+  }
+  .concepts-table tr:last-child td { border-bottom:none; }
+  .concepts-table tr:hover td { background:#ffffff05; }
+  .td-code { color:var(--text3); font-size:11px; }
+  .td-desc { color:var(--text2); }
+  .td-horas { color:var(--accent2); text-align:right; }
+  .td-valor { color:var(--accent); text-align:right; }
+
+  .info-box {
+    background:#1a1200; border:1px solid #3d2e00; border-radius:8px;
+    padding:10px 14px; font-size:12px; color:var(--warn); margin-top:12px;
+    display:flex; gap:8px; align-items:flex-start;
+  }
+
+  .divider { height:1px; background:var(--border); margin:16px 0; }
+
+  @media(max-width:600px){
+    .deductions-grid { grid-template-columns:1fr; }
+    .result-breakdown { grid-template-columns:1fr; }
+    .result-neto { font-size:36px; }
+    .period-row { flex-direction:column; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-icon">🛡️</div>
+    <div>
+      <div class="header-title">CALCULADORA DE COLILLA</div>
+      <div class="header-sub">SEGURIDAD DE OCCIDENTE LTDA · VIGILANTE · 2x2x2</div>
+    </div>
+    <div class="header-badge">2026</div>
+  </div>
+
+  <!-- SECCIÓN 1: PERIODO -->
+  <div class="section">
+    <div class="section-header" onclick="toggleSection('periodo')">
+      <div class="section-num">1</div>
+      <div class="section-title">PERIODO DE LIQUIDACIÓN</div>
+      <div class="section-arrow open" id="arrow-periodo">›</div>
+    </div>
+    <div class="section-body open" id="body-periodo">
+      <div class="period-row">
+        <div class="field-group">
+          <div class="field-label">Fecha inicio</div>
+          <input type="date" id="fechaInicio" value="2026-03-01">
+        </div>
+        <div class="field-group">
+          <div class="field-label">Fecha fin</div>
+          <input type="date" id="fechaFin" value="2026-03-15">
+        </div>
+        <div class="field-group" style="max-width:160px">
+          <div class="field-label">Tipo quincena</div>
+          <select id="tipoQuincena" onchange="onTipoChange()">
+            <option value="primera">Primera (1-15)</option>
+            <option value="segunda">Segunda (16-30/31)</option>
+          </select>
+        </div>
+        <div style="padding-bottom:0">
+          <button class="btn btn-primary" onclick="generarCalendario()">Generar calendario</button>
+        </div>
+      </div>
+      <div class="info-box" style="margin-top:14px">
+        <span>ℹ️</span>
+        <span>El <strong>auxilio de transporte</strong> y el <strong>servicio funerario</strong> se aplican automáticamente según el tipo de quincena. El fondo de empleados es editable.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN 2: CALENDARIO -->
+  <div class="section">
+    <div class="section-header" onclick="toggleSection('calendario')">
+      <div class="section-num">2</div>
+      <div class="section-title">CALENDARIO DE TURNOS</div>
+      <div class="section-arrow open" id="arrow-calendario">›</div>
+    </div>
+    <div class="section-body open" id="body-calendario">
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>D = Turno Diurno (6am-6pm)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>N = Turno Nocturno (6pm-6am)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--festivo)"></div>F = Marcar Festivo</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>✕ = Quitar turno</div>
+      </div>
+      <div id="calendarContainer">
+        <div style="color:var(--text3); font-size:13px; text-align:center; padding:30px 0;">
+          Haz clic en "Generar calendario" para ver los días del periodo.
+        </div>
+      </div>
+      <div id="turnosSummary" style="display:none">
+        <div class="divider"></div>
+        <div class="turnos-summary" id="turnosSummaryGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN 3: DEDUCCIONES -->
+  <div class="section">
+    <div class="section-header" onclick="toggleSection('deducciones')">
+      <div class="section-num">3</div>
+      <div class="section-title">DEDUCCIONES ADICIONALES</div>
+      <div class="section-arrow open" id="arrow-deducciones">›</div>
+    </div>
+    <div class="section-body open" id="body-deducciones">
+      <div class="deductions-grid">
+        <div>
+          <div class="field-label" style="margin-bottom:6px">528 · Fondo de empleados ($)</div>
+          <input type="number" id="fondoEmpleados" value="45633" placeholder="0">
+        </div>
+        <div>
+          <div class="field-label" style="margin-bottom:6px">Otras deducciones ($)</div>
+          <input type="number" id="otrasDeduciones" value="0" placeholder="0">
+        </div>
+      </div>
+      <div class="info-box">
+        <span>🔒</span>
+        <span>Salud (4%) y Pensión (4%) se calculan automáticamente sobre el total devengado. El servicio funerario ($9,600) aplica solo en la segunda quincena.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN 4: RESULTADO -->
+  <div class="section">
+    <div class="section-header" onclick="toggleSection('resultado')">
+      <div class="section-num">4</div>
+      <div class="section-title">LIQUIDACIÓN ESTIMADA</div>
+      <div class="section-arrow open" id="arrow-resultado">›</div>
+    </div>
+    <div class="section-body open" id="body-resultado">
+      <div style="text-align:center; margin-bottom:16px">
+        <button class="btn btn-primary" style="padding:12px 32px; font-size:16px;" onclick="calcular()">⚡ CALCULAR NETO</button>
+      </div>
+      <div id="resultContainer" style="display:none">
+
+        <div class="result-card">
+          <div class="result-title">NETO APROXIMADO A PAGAR</div>
+          <div class="result-neto"><span>$</span> <span id="neto-val">0</span></div>
+          <div style="font-size:12px; color:var(--text2); margin-top:6px" id="periodo-label"></div>
+        </div>
+
+        <div class="result-breakdown" style="margin-top:16px">
+          <div class="rb-row total-dev">
+            <span class="rb-label">Total devengado</span>
+            <span class="rb-val green" id="r-devengado"></span>
+          </div>
+          <div class="rb-row">
+            <span class="rb-label">Salario base proporcional</span>
+            <span class="rb-val" id="r-base"></span>
+          </div>
+          <div class="rb-row">
+            <span class="rb-label">Auxilio de transporte</span>
+            <span class="rb-val" id="r-aux"></span>
+          </div>
+          <div class="rb-row">
+            <span class="rb-label">Descanso obligatorio</span>
+            <span class="rb-val" id="r-descanso"></span>
+          </div>
+          <div class="rb-row">
+            <span class="rb-label">Recargos y extras</span>
+            <span class="rb-val" id="r-recargos"></span>
+          </div>
+          <div class="rb-row total-ded">
+            <span class="rb-label">Total deducciones</span>
+            <span class="rb-val red" id="r-deducciones"></span>
+          </div>
+          <div class="rb-row">
+            <span class="rb-label">Salud (4%)</span>
+            <span class="rb-val red" id="r-salud"></span>
+          </div>
+          <div class="rb-row">
+            <span class="rb-label">Pensión (4%)</span>
+            <span class="rb-val red" id="r-pension"></span>
+          </div>
+          <div class="rb-row">
+            <span class="rb-label">Fondo empleados</span>
+            <span class="rb-val red" id="r-fondo"></span>
+          </div>
+          <div class="rb-row">
+            <span class="rb-label">Servicio funerario</span>
+            <span class="rb-val red" id="r-funerario"></span>
+          </div>
+          <div class="rb-row">
+            <span class="rb-label">Otras deducciones</span>
+            <span class="rb-val red" id="r-otras"></span>
+          </div>
+        </div>
+
+        <div style="margin-top:20px">
+          <div style="font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Detalle de conceptos</div>
+          <table class="concepts-table" id="conceptsTable"></table>
+        </div>
+
+        <div class="info-box" style="margin-top:16px">
+          <span>⚠️</span>
+          <span>Este cálculo es una <strong>estimación aproximada</strong> basada en tus colillas reales. Puede haber variaciones por ajustes de la empresa, intereses sobre cesantías u otros conceptos especiales.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// =====================================================
+// CONSTANTES (de las colillas reales)
+// =====================================================
+const SALARIO_MENSUAL = 1750905;
+const VALOR_HORA = SALARIO_MENSUAL / 220; // ~7,958.66
+const AUXILIO_TRANSPORTE_MENSUAL = 200000; // proporcional
+const SERVICIO_FUNERARIO = 9600;
+
+// Porcentajes de recargo (sobre valor hora base)
+const RECARGOS = {
+  JORNADA_ORDINARIA: 1.00,
+  RECARGO_NOCTURNO: 0.35,       // 35% adicional sobre hora
+  RECARGO_DOMINICAL: 1.80,      // 180% adicional
+  RECARGO_FESTIVO: 0.75,        // 75% adicional
+  RECARGO_NOCT_FESTIVO: 0.35,   // 35% adicional
+  HE_ORDINARIA: 1.25,
+  HE_NOCTURNA: 1.75,
+  HE_DIURNA_FESTIVA: 2.00,
+  HE_NOCT_FESTIVA: 2.50,
+  DESCANSO_OBLIGATORIO: 1.00,
+  DOMINICAL_COMPENSADO: 1.00,
+  FESTIVO_NORMAL: 1.00,
+};
+
+// Festivos Colombia 2026
+const FESTIVOS_2026 = new Set([
+  '2026-01-01','2026-01-12','2026-03-23','2026-04-02',
+  '2026-04-03','2026-05-01','2026-05-18','2026-06-08',
+  '2026-06-15','2026-06-29','2026-07-20','2026-08-07',
+  '2026-08-17','2026-10-12','2026-11-02','2026-11-16',
+  '2026-12-08','2026-12-25'
+]);
+
+// Estado
+let diasState = {}; // { 'YYYY-MM-DD': { turno: 'D'|'N'|null, esFestivo: bool, esDomingo: bool } }
+
+// =====================================================
+// UTILIDADES
+// =====================================================
+function fmt(n) {
+  return Math.round(n).toLocaleString('es-CO');
+}
+function dateStr(d) {
+  return d.toISOString().split('T')[0];
+}
+function parseDate(s) {
+  const [y,m,d] = s.split('-').map(Number);
+  return new Date(y, m-1, d);
+}
+function esDomingo(ds) {
+  return parseDate(ds).getDay() === 0;
+}
+
+// =====================================================
+// TOGGLE SECCIONES
+// =====================================================
+function toggleSection(id) {
+  const body = document.getElementById('body-'+id);
+  const arrow = document.getElementById('arrow-'+id);
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  body.style.display = isOpen ? 'none' : 'block';
+  arrow.classList.toggle('open', !isOpen);
+}
+
+// =====================================================
+// TIPO QUINCENA AUTO
+// =====================================================
+function onTipoChange() {}
+
+document.getElementById('fechaInicio').addEventListener('change', function() {
+  const d = parseInt(this.value.split('-')[2]);
+  document.getElementById('tipoQuincena').value = d <= 15 ? 'primera' : 'segunda';
+});
+
+// =====================================================
+// GENERAR CALENDARIO
+// =====================================================
+function generarCalendario() {
+  const inicio = document.getElementById('fechaInicio').value;
+  const fin = document.getElementById('fechaFin').value;
+  if (!inicio || !fin) return;
+
+  const d0 = parseDate(inicio);
+  const d1 = parseDate(fin);
+  if (d1 < d0) { alert('La fecha fin debe ser mayor a la fecha inicio'); return; }
+
+  // Detectar tipo quincena
+  const dia = parseInt(inicio.split('-')[2]);
+  document.getElementById('tipoQuincena').value = dia <= 15 ? 'primera' : 'segunda';
+
+  // Reiniciar estado
+  diasState = {};
+  let cur = new Date(d0);
+  while (cur <= d1) {
+    const ds = dateStr(cur);
+    diasState[ds] = {
+      turno: null,
+      esFestivo: FESTIVOS_2026.has(ds),
+      esDomingo: cur.getDay() === 0
+    };
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  renderCalendario(d0, d1);
+  document.getElementById('turnosSummary').style.display = 'block';
+  actualizarSummary();
+}
+
+function renderCalendario(d0, d1) {
+  const dias = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const primerDia = d0.getDay();
+
+  let html = '<div class="calendar-grid">';
+  // encabezados
+  for (let i=0; i<7; i++) {
+    html += `<div class="cal-dow${i===0?' sunday':''}">${dias[i]}</div>`;
+  }
+  // vacíos iniciales
+  for (let i=0; i<primerDia; i++) html += '<div class="cal-empty"></div>';
+
+  let cur = new Date(d0);
+  while (cur <= d1) {
+    const ds = dateStr(cur);
+    const st = diasState[ds];
+    const numDia = cur.getDate();
+    let cls = 'cal-day';
+    if (st.esDomingo) cls += ' sunday';
+    if (st.esFestivo) cls += ' festivo';
+    if (st.turno) cls += ' has-turno';
+
+    let badges = '';
+    if (st.esDomingo && !st.esFestivo) badges += '<span class="day-badge badge-dom">Dom</span>';
+    if (st.esFestivo) badges += '<span class="day-badge badge-fest">Fest</span>';
+    if (st.turno==='D') badges += '<span class="day-badge badge-d">D·12h</span>';
+    if (st.turno==='N') badges += '<span class="day-badge badge-n">N·12h</span>';
+
+    html += `<div class="${cls}" id="day-${ds}">
+      <div class="cal-day-num">${numDia}</div>
+      <div style="display:flex;flex-direction:column;gap:2px;align-items:center">${badges}</div>
+      <div class="cal-actions">
+        <button class="cal-btn cal-btn-d${st.turno==='D'?' active':''}" onclick="setTurno('${ds}','D')">D</button>
+        <button class="cal-btn cal-btn-n${st.turno==='N'?' active':''}" onclick="setTurno('${ds}','N')">N</button>
+        <button class="cal-btn cal-btn-f${st.esFestivo?' active':''}" onclick="toggleFestivo('${ds}')">F</button>
+        ${st.turno ? `<button class="cal-btn cal-btn-x" onclick="setTurno('${ds}',null)">✕</button>` : ''}
+      </div>
+    </div>`;
+
+    cur.setDate(cur.getDate() + 1);
+  }
+  html += '</div>';
+  document.getElementById('calendarContainer').innerHTML = html;
+}
+
+function setTurno(ds, turno) {
+  diasState[ds].turno = turno;
+  const d0 = parseDate(document.getElementById('fechaInicio').value);
+  const d1 = parseDate(document.getElementById('fechaFin').value);
+  renderCalendario(d0, d1);
+  actualizarSummary();
+}
+
+function toggleFestivo(ds) {
+  diasState[ds].esFestivo = !diasState[ds].esFestivo;
+  const d0 = parseDate(document.getElementById('fechaInicio').value);
+  const d1 = parseDate(document.getElementById('fechaFin').value);
+  renderCalendario(d0, d1);
+}
+
+function actualizarSummary() {
+  let diurnos=0, nocturnos=0, domingos=0, festivos=0, total=0;
+  for (const [ds, st] of Object.entries(diasState)) {
+    if (st.turno==='D') diurnos++;
+    if (st.turno==='N') nocturnos++;
+    if (st.esDomingo && st.turno) domingos++;
+    if (st.esFestivo && st.turno) festivos++;
+    if (st.turno) total++;
+  }
+  document.getElementById('turnosSummaryGrid').innerHTML = `
+    <div class="turno-card"><div class="turno-card-label">Turnos diurnos</div><div class="turno-card-val">${diurnos}</div><div class="turno-card-unit">${diurnos*12} horas</div></div>
+    <div class="turno-card"><div class="turno-card-label">Turnos nocturnos</div><div class="turno-card-val" style="color:#60a5fa">${nocturnos}</div><div class="turno-card-unit">${nocturnos*12} horas</div></div>
+    <div class="turno-card"><div class="turno-card-label">Domingos trabajados</div><div class="turno-card-val" style="color:var(--dominical)">${domingos}</div><div class="turno-card-unit">turnos</div></div>
+    <div class="turno-card"><div class="turno-card-label">Festivos trabajados</div><div class="turno-card-val" style="color:var(--festivo)">${festivos}</div><div class="turno-card-unit">turnos</div></div>
+    <div class="turno-card"><div class="turno-card-label">Total turnos</div><div class="turno-card-val">${total}</div><div class="turno-card-unit">${total*12} horas</div></div>
+  `;
+}
+
+// =====================================================
+// CALCULAR
+// =====================================================
+function calcular() {
+  const tipo = document.getElementById('tipoQuincena').value;
+  const fondo = parseFloat(document.getElementById('fondoEmpleados').value)||0;
+  const otras = parseFloat(document.getElementById('otrasDeduciones').value)||0;
+
+  if (Object.keys(diasState).length === 0) {
+    alert('Primero genera el calendario y marca tus turnos.');
+    return;
+  }
+
+  // Contadores de horas por tipo
+  let hOrdDiurno = 0;      // jornada ordinaria diurna
+  let hOrdNocturno = 0;    // horas con recargo nocturno (12h turno nocturno = 6h noct+6h diurna lunes a sábado no festivo)
+  let hRecNocturno = 0;    // horas de recargo nocturno (21:00-06:00 → en turno de 6pm-6am son ~9h nocturnas legales)
+  let hDominicalComp = 0;  // horas dominical compensado
+  let hRecDominical = 0;   // horas de recargo dominical
+  let hFestivoNormal = 0;  // horas festivo normal
+  let hRecFestivo = 0;     // horas de recargo festivo
+  let hRecNoctFest = 0;    // recargo nocturno festivo
+
+  // Para "descanso obligatorio" → fijo de ~14.67h por quincena (observado en colillas)
+  const HORAS_DESCANSO = 14.67;
+
+  // Conceptos para la tabla
+  let conceptos = [];
+
+  for (const [ds, st] of Object.entries(diasState)) {
+    if (!st.turno) continue;
+
+    const esDom = st.esDomingo;
+    const esFest = st.esFestivo;
+    const esNoche = st.turno === 'N';
+
+    if (esNoche) {
+      // Turno nocturno: 6pm a 6am (12h)
+      // Horas nocturnas legales (9pm-6am = 9h), horas diurnas en turno nocturno (6pm-9pm = 3h)
+      // Para recargo nocturno: aplica sobre horas entre 9pm y 6am = 9h
+      // La colilla muestra ~55h de recargo nocturno en 15 días con varios turnos → ~9h por turno nocturno
+
+      if (esFest) {
+        // Turno nocturno que termina en festivo: se divide 6h normales + 6h festivas
+        // Primero verificar el día siguiente
+        const nextDate = new Date(parseDate(ds));
+        nextDate.setDate(nextDate.getDate() + 1);
+        const nextDs = dateStr(nextDate);
+        const nextFest = diasState[nextDs]?.esFestivo || FESTIVOS_2026.has(nextDs);
+        const nextDom = nextDate.getDay() === 0;
+
+        // Horas nocturnas del día actual (6pm-12am = 6h)
+        hOrdNocturno += 6;
+        hRecNocturno += 6; // recargo nocturno sobre esas 6h
+
+        // Horas en el día siguiente festivo (12am-6am = 6h)
+        hFestivoNormal += 6;
+        hRecNoctFest += 6; // recargo noct festivo
+        if (nextFest) hRecFestivo += 6; // también recargo festivo
+
+      } else if (esDom) {
+        // Turno nocturno en domingo
+        hDominicalComp += 12;
+        hRecDominical += 12;
+        hRecNocturno += 9; // recargo nocturno (9h nocturnas)
+
+      } else {
+        // Turno nocturno normal
+        hOrdNocturno += 12;
+        hRecNocturno += 9; // 9h con recargo nocturno (9pm-6am)
+      }
+
+    } else {
+      // Turno diurno: 6am a 6pm (12h)
+      if (esFest && esDom) {
+        hFestivoNormal += 12;
+        hRecFestivo += 12;
+        hRecDominical += 12;
+      } else if (esFest) {
+        hFestivoNormal += 12;
+        hRecFestivo += 12;
+      } else if (esDom) {
+        hDominicalComp += 12;
+        hRecDominical += 12;
+      } else {
+        hOrdDiurno += 12;
+      }
+    }
+  }
+
+  // ---- CALCULAR VALORES ----
+  const VH = VALOR_HORA;
+
+  // Jornada ordinaria diurna
+  const vJornadaOrd = hOrdDiurno * VH * RECARGOS.JORNADA_ORDINARIA;
+  // Jornada ordinaria nocturna (horas base del turno nocturno)
+  const vJornadaNoc = hOrdNocturno * VH * RECARGOS.JORNADA_ORDINARIA;
+  // Recargo nocturno (35% sobre horas nocturnas)
+  const vRecNoc = hRecNocturno * VH * RECARGOS.RECARGO_NOCTURNO;
+  // Dominical compensado (horas + 100% base)
+  const vDomComp = hDominicalComp * VH * RECARGOS.DOMINICAL_COMPENSADO;
+  // Recargo dominical (180%)
+  const vRecDom = hRecDominical * VH * RECARGOS.RECARGO_DOMINICAL;
+  // Festivo normal
+  const vFestNorm = hFestivoNormal * VH * RECARGOS.FESTIVO_NORMAL;
+  // Recargo festivo (75%)
+  const vRecFest = hRecFestivo * VH * RECARGOS.RECARGO_FESTIVO;
+  // Recargo nocturno festivo (35%)
+  const vRecNocFest = hRecNoctFest * VH * RECARGOS.RECARGO_NOCT_FESTIVO;
+  // Descanso obligatorio
+  const vDescanso = HORAS_DESCANSO * VH;
+
+  // Auxilio de transporte proporcional
+  // En segunda quincena de febrero colilla mostró valor reducido → proporcional a días del periodo
+  const diasPeriodo = Object.keys(diasState).length;
+  const vAuxilio = (AUXILIO_TRANSPORTE_MENSUAL / 30) * diasPeriodo;
+
+  // Total devengado
+  const totalDevengado = vJornadaOrd + vJornadaNoc + vRecNoc + vDomComp + vRecDom +
+    vFestNorm + vRecFest + vRecNocFest + vDescanso + vAuxilio;
+
+  // Deducciones
+  const baseParaSeguros = totalDevengado - vAuxilio; // salud y pensión no incluyen auxilio
+  const vSalud = baseParaSeguros * 0.04;
+  const vPension = baseParaSeguros * 0.04;
+  const vFunerario = tipo === 'segunda' ? SERVICIO_FUNERARIO : 0;
+  const totalDeducciones = vSalud + vPension + fondo + vFunerario + otras;
+
+  const neto = totalDevengado - totalDeducciones;
+
+  // ---- CONCEPTOS PARA TABLA ----
+  const conceptosData = [
+    { cod:'003', desc:'Jornada Ordinaria Diurna', horas: hOrdDiurno.toFixed(1), valor: vJornadaOrd },
+    { cod:'003N', desc:'Jornada Ordinaria (turno noct)', horas: hOrdNocturno.toFixed(1), valor: vJornadaNoc },
+    { cod:'013', desc:'Recargo Nocturno (35%)', horas: hRecNocturno.toFixed(1), valor: vRecNoc },
+    { cod:'012', desc:'Dominical Compensado', horas: hDominicalComp.toFixed(1), valor: vDomComp },
+    { cod:'CLD', desc:'Recargo Dominical (180%)', horas: hRecDominical.toFixed(1), valor: vRecDom },
+    { cod:'011', desc:'Festivo Normal', horas: hFestivoNormal.toFixed(1), valor: vFestNorm },
+    { cod:'CLF', desc:'Recargo Festivo (75%)', horas: hRecFestivo.toFixed(1), valor: vRecFest },
+    { cod:'014', desc:'Recargo Noct. Festivo (35%)', horas: hRecNoctFest.toFixed(1), valor: vRecNocFest },
+    { cod:'010', desc:'Descanso Obligatorio', horas: HORAS_DESCANSO.toFixed(2), valor: vDescanso },
+    { cod:'005', desc:'Auxilio de Transporte', horas: '-', valor: vAuxilio },
+  ].filter(c => c.valor > 0);
+
+  // ---- RENDER ----
+  document.getElementById('neto-val').textContent = fmt(neto);
+  document.getElementById('periodo-label').textContent =
+    `${document.getElementById('fechaInicio').value} → ${document.getElementById('fechaFin').value}  ·  ${diasPeriodo} días  ·  Tipo: ${tipo === 'primera' ? '1ª quincena' : '2ª quincena'}`;
+
+  document.getElementById('r-devengado').textContent = '$' + fmt(totalDevengado);
+  document.getElementById('r-base').textContent = '$' + fmt(vJornadaOrd + vJornadaNoc);
+  document.getElementById('r-aux').textContent = '$' + fmt(vAuxilio);
+  document.getElementById('r-descanso').textContent = '$' + fmt(vDescanso);
+  document.getElementById('r-recargos').textContent = '$' + fmt(vRecNoc + vRecDom + vRecFest + vRecNocFest + vDomComp + vFestNorm);
+  document.getElementById('r-deducciones').textContent = '-$' + fmt(totalDeducciones);
+  document.getElementById('r-salud').textContent = '-$' + fmt(vSalud);
+  document.getElementById('r-pension').textContent = '-$' + fmt(vPension);
+  document.getElementById('r-fondo').textContent = '-$' + fmt(fondo);
+  document.getElementById('r-funerario').textContent = vFunerario > 0 ? '-$' + fmt(vFunerario) : '$0';
+  document.getElementById('r-otras').textContent = otras > 0 ? '-$' + fmt(otras) : '$0';
+
+  let tableHTML = `<thead><tr>
+    <th>Cód</th><th>Concepto</th><th style="text-align:right">Horas</th><th style="text-align:right">Valor</th>
+  </tr></thead><tbody>`;
+  for (const c of conceptosData) {
+    tableHTML += `<tr>
+      <td class="td-code">${c.cod}</td>
+      <td class="td-desc">${c.desc}</td>
+      <td class="td-horas">${c.horas}</td>
+      <td class="td-valor">$${fmt(c.valor)}</td>
+    </tr>`;
+  }
+  tableHTML += `</tbody>`;
+  document.getElementById('conceptsTable').innerHTML = tableHTML;
+
+  document.getElementById('resultContainer').style.display = 'block';
+  document.getElementById('resultContainer').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', () => {
+  // Abrir todas las secciones por defecto
+  ['periodo','calendario','deducciones','resultado'].forEach(id => {
+    document.getElementById('body-'+id).style.display = 'block';
+  });
+});
+</script>
+</body>
+</html>
